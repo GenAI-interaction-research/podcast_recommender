@@ -54,13 +54,19 @@ except Exception as e:
 @app.route('/generate', methods=['POST', 'OPTIONS'])
 def generate_text():
     """
-    Receives text input from the frontend, sends it to the Gemini API,
-    and returns the generated text. Handles preflight OPTIONS requests.
+    Handles POST requests to generate text via Gemini API
+    and handles preflight OPTIONS requests for CORS.
     """
-    # Flask-Cors usually handles OPTIONS requests automatically when configured
-    # as above. If you needed manual handling, you'd check request.method == 'OPTIONS'
-    # For POST requests:
-    if request.method == 'POST':
+    # --- Handle OPTIONS request explicitly ---
+    if request.method == 'OPTIONS':
+        # Flask-Cors adds the Access-Control headers.
+        # We just need to return a successful response.
+        # 204 No Content is appropriate for successful preflight.
+        return '', 204
+    # -----------------------------------------
+
+    # --- Handle POST request ---
+    elif request.method == 'POST':
         if not GEMINI_API_KEY:
              logging.error("Cannot process request: GEMINI_API_KEY is not configured.")
              return jsonify({"error": "Server configuration error: API key missing."}), 500
