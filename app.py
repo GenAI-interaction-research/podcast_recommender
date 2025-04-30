@@ -70,8 +70,11 @@ MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-0417")
 try:
     # Initialize the generative model
     # Add safety_settings and generation_config as needed
-    model = genai.GenerativeModel(MODEL_NAME)
-    logging.info(f"Successfully initialized GenerativeModel with {MODEL_NAME}")
+    model = genai.GenerativeModel(
+        MODEL_NAME,
+        system_instruction=SYSTEM_PROMPT
+    )
+    logging.info(f"Successfully initialized GenerativeModel with {MODEL_NAME} and system instruction.")
 except Exception as e:
     logging.error(f"Failed to initialize GenerativeModel ({MODEL_NAME}): {e}")
     model = None # Ensure model is None if initialization fails
@@ -121,9 +124,7 @@ def generate_text():
         try:
             logging.info(f"Sending request to Gemini model: {MODEL_NAME}")
             response = model.generate_content(
-                contents=incoming_history, # Pass the list of message dicts
-                # Use system_instruction parameter if the model/method supports it
-                system_instruction=SYSTEM_PROMPT
+                contents=incoming_history # Pass only the history
             )
             # Check the google.generativeai documentation for gemini-1.5-flash-preview-0417
             # on how to best include system instructions. It might be a parameter
