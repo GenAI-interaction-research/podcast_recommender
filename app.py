@@ -1,5 +1,6 @@
 import os
 import google.generativeai as genai
+from google.generativeai.types import Content, Part # For structuring content
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import logging
@@ -24,6 +25,31 @@ CORS(app, resources={r"/generate": {"origins": allowed_origins}})
 # CORS(app) # Allows all origins - NOT recommended for production
 # --------------------------
 
+# --- Define System Prompt ---
+SYSTEM_PROMPT = """
+You are a friendly, patient, and helpful AI travel planning assistant. Your goal is to help the user brainstorm and plan their ideal trip by gathering information step-by-step.
+
+**Your Primary Instructions:**
+
+1.  **Be Conversational:** Maintain a friendly and encouraging tone throughout the interaction.
+2.  **Ask Step-by-Step:** Do NOT ask for all the travel details at once. Ask questions sequentially, focusing on one topic or a small group of related topics per turn (e.g., ask about destination ideas first, then maybe duration, then budget, etc.).
+3.  **Gather Key Information:** Gradually gather details needed for travel planning. This includes, but is not limited to:
+    *   Initial destination ideas or desired trip type (e.g., beach, city break, adventure, relaxation).
+    *   Travel dates, season, or duration.
+    *   Budget considerations (e.g., luxury, mid-range, budget-friendly).
+    *   Traveler information (e.g., solo, couple, family with kids - including general age group if relevant like 'family with young children').
+    *   Travel style preferences (e.g., fast-paced, relaxing, adventurous, cultural immersion).
+    *   Preferred activities or interests (e.g., hiking, museums, nightlife, food, shopping).
+    *   Any must-haves or deal-breakers.
+4.  **Adapt Your Questions:** Base your follow-up questions on the user's previous answers. Keep the conversation flowing naturally.
+5.  **Start Broadly:** Begin with a general, open-ended question to understand the user's initial thoughts unless the conversation history indicates otherwise.
+
+**Example Starting Question (if history is empty):**
+
+"Hi there! I'm excited to help you plan your next travel adventure. To get started, do you have any initial thoughts about where you might like to go, or perhaps what kind of experience you're hoping for (like relaxing on a beach, exploring a bustling city, or something else)?"
+"""
+# -----------------------------
+
 # --- Environment Variable Check ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
@@ -40,7 +66,7 @@ else:
 # --- GenAI Model Configuration ---
 # Choose the Gemini model (e.g., "gemini-1.5-flash", "gemini-pro")
 # Make this configurable via environment variable if needed
-MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-0417")
 try:
     # Initialize the generative model
     # Add safety_settings and generation_config as needed
@@ -54,7 +80,7 @@ except Exception as e:
 @app.route('/generate', methods=['POST', 'OPTIONS'])
 def generate_text():
     """
-    Handles POST requests to generate text via Gemini API
+    Handles POST requests with conversation history to generate text via Gemini API
     and handles preflight OPTIONS requests for CORS.
     """
     # --- Handle OPTIONS request explicitly ---
@@ -81,25 +107,27 @@ def generate_text():
             return jsonify({"error": "Request must be JSON"}), 400
 
         data = request.get_json()
-        user_prompt = data.get('prompt')
+        incoming_history = data.get('history') # Expect 'history' key
 
-        if not user_prompt:
-            logging.warning("Missing 'prompt' in request data")
-            return jsonify({"error": "Missing 'prompt' in request data"}), 400
+        # --- Validate History ---
+        if not incoming_history or not isinstance(incoming_history, list):
+            logging.warning("Invalid or missing 'history' in request data")
+            return jsonify({"error": "Invalid or missing 'history' (must be a list)"}), 400
+        # Add more validation if needed (e.g., check structure of items in list)
 
-        if not isinstance(user_prompt, str):
-            logging.warning("Invalid 'prompt' type in request data")
-            return jsonify({"error": "'prompt' must be a string"}), 400
-
-        logging.info(f"Received prompt: {user_prompt[:50]}...") # Log snippet
+        logging.info(f"Received history with {len(incoming_history)} messages.")
 
         # --- Gemini API Call ---
         try:
             logging.info(f"Sending request to Gemini model: {MODEL_NAME}")
-            # For simple text-in, text-out, use generate_content
-            response = model.generate_content(user_prompt)
-            # Consider adding generation_config for temperature, max_output_tokens etc.
-            # response = model.generate_content(user_prompt, generation_config=genai.types.GenerationConfig(...))
+            response = model.generate_content(
+                contents=incoming_history, # Pass the list of message dicts
+                # Use system_instruction parameter if the model/method supports it
+                system_instruction=SYSTEM_PROMPT
+            )
+            # Check the google.generativeai documentation for gemini-1.5-flash-preview-0417
+            # on how to best include system instructions. It might be a parameter
+            # to generate_content or part of the model constructor.
 
             # --- Response Handling ---
             # Basic check if the response contains text
@@ -121,7 +149,7 @@ def generate_text():
 
 
         except Exception as e:
-            logging.error(f"Error calling Gemini API: {e}", exc_info=True)
+            logging.error(f"Error calling Gemini API or processing history: {e}", exc_info=True)
             # Consider more specific error handling based on potential exceptions
             # from the google.generativeai library
             return jsonify({"error": "An error occurred while processing your request."}), 500
