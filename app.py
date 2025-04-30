@@ -1,6 +1,6 @@
 import os
 import google.generativeai as genai
-from google.generativeai.types import Content, Part # For structuring content
+# from google.generativeai.types import Content, Part # For structuring content
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import logging
