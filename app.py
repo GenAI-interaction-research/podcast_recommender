@@ -66,7 +66,7 @@ else:
 # --- GenAI Model Configuration ---
 # Choose the Gemini model (e.g., "gemini-1.5-flash", "gemini-pro")
 # Make this configurable via environment variable if needed
-MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-0417")
+MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash-preview-04-17")
 try:
     # Initialize the generative model
     # Add safety_settings and generation_config as needed
