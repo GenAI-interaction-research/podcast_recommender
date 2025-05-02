@@ -16,7 +16,7 @@ app = Flask(__name__)
 # --- CORS Configuration ---
 # Define the specific origin(s) allowed to access your backend
 # Use the origin shown in the error message
-allowed_origins = ["https://emlyonbs.eu.qualtrics.com"]
+allowed_origins = ["https://emlyonbs.qualtrics.com", "https://emlyonbs.eu.qualtrics.com"]
 
 # Apply CORS to your app, specifying allowed origins
 CORS(app, resources={r"/generate": {"origins": allowed_origins}})
