@@ -80,83 +80,70 @@ except Exception as e:
     model = None # Ensure model is None if initialization fails
 
 # --- API Endpoint ---
-@app.route('/generate', methods=['POST', 'OPTIONS'])
+@app.route('/generate', methods=['POST'])
 def generate_text():
     """
-    Handles POST requests with conversation history to generate text via Gemini API
-    and handles preflight OPTIONS requests for CORS.
+    Handles POST requests with conversation history to generate text via Gemini API.
+    CORS preflight OPTIONS requests are handled automatically by Flask-CORS.
     """
-    if request.method == 'OPTIONS':
-        response = app.make_default_options_response()
-        response.headers.add('Access-Control-Allow-Origin', 'https://emlyonbs.qualtrics.com')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
-    
-    # --- Handle POST request ---
-    elif request.method == 'POST':
-        if not GEMINI_API_KEY:
-             logging.error("Cannot process request: GEMINI_API_KEY is not configured.")
-             return jsonify({"error": "Server configuration error: API key missing."}), 500
+    if not GEMINI_API_KEY:
+         logging.error("Cannot process request: GEMINI_API_KEY is not configured.")
+         return jsonify({"error": "Server configuration error: API key missing."}), 500
 
-        if not model:
-            logging.error("Cannot process request: GenerativeModel failed to initialize.")
-            return jsonify({"error": "Server configuration error: Model initialization failed."}), 500
+    if not model:
+        logging.error("Cannot process request: GenerativeModel failed to initialize.")
+        return jsonify({"error": "Server configuration error: Model initialization failed."}), 500
 
-        # --- Input Validation ---
-        if not request.is_json:
-            logging.warning("Received non-JSON request")
-            return jsonify({"error": "Request must be JSON"}), 400
+    # --- Input Validation ---
+    if not request.is_json:
+        logging.warning("Received non-JSON request")
+        return jsonify({"error": "Request must be JSON"}), 400
 
-        data = request.get_json()
-        incoming_history = data.get('history') # Expect 'history' key
+    data = request.get_json()
+    incoming_history = data.get('history') # Expect 'history' key
 
-        # --- Validate History ---
-        if not incoming_history or not isinstance(incoming_history, list):
-            logging.warning("Invalid or missing 'history' in request data")
-            return jsonify({"error": "Invalid or missing 'history' (must be a list)"}), 400
-        # Add more validation if needed (e.g., check structure of items in list)
+    # --- Validate History ---
+    if not incoming_history or not isinstance(incoming_history, list):
+        logging.warning("Invalid or missing 'history' in request data")
+        return jsonify({"error": "Invalid or missing 'history' (must be a list)"}), 400
+    # Add more validation if needed (e.g., check structure of items in list)
 
-        logging.info(f"Received history with {len(incoming_history)} messages.")
+    logging.info(f"Received history with {len(incoming_history)} messages.")
 
-        # --- Gemini API Call ---
-        try:
-            logging.info(f"Sending request to Gemini model: {MODEL_NAME}")
-            response = model.generate_content(
-                contents=incoming_history # Pass only the history
-            )
-            # Check the google.generativeai documentation for gemini-1.5-flash-preview-0417
-            # on how to best include system instructions. It might be a parameter
-            # to generate_content or part of the model constructor.
+    # --- Gemini API Call ---
+    try:
+        logging.info(f"Sending request to Gemini model: {MODEL_NAME}")
+        response = model.generate_content(
+            contents=incoming_history # Pass only the history
+        )
+        # Check the google.generativeai documentation for gemini-1.5-flash-preview-0417
+        # on how to best include system instructions. It might be a parameter
+        # to generate_content or part of the model constructor.
 
-            # --- Response Handling ---
-            # Basic check if the response contains text
-            if response.parts:
-                 generated_text = response.text # Access text directly via .text
-                 logging.info(f"Received response from Gemini: {generated_text[:50]}...") # Log snippet
-                 # Optional: Add PII detection/redaction here before sending back
-                 # Example placeholder: generated_text = redact_pii(generated_text)
-                 return jsonify({"generated_text": generated_text})
-            else:
-                 # Handle cases where the response might be blocked or empty
-                 # See response.prompt_feedback for details if blocked
-                 logging.warning(f"Gemini response was empty or blocked. Feedback: {response.prompt_feedback}")
-                 error_message = "Failed to generate text. The prompt might have been blocked."
-                 # Check for specific block reasons if available
-                 if response.prompt_feedback and response.prompt_feedback.block_reason:
-                     error_message += f" Reason: {response.prompt_feedback.block_reason.name}"
-                 return jsonify({"error": error_message}), 500
+        # --- Response Handling ---
+        # Basic check if the response contains text
+        if response.parts:
+             generated_text = response.text # Access text directly via .text
+             logging.info(f"Received response from Gemini: {generated_text[:50]}...") # Log snippet
+             # Optional: Add PII detection/redaction here before sending back
+             # Example placeholder: generated_text = redact_pii(generated_text)
+             return jsonify({"generated_text": generated_text})
+        else:
+             # Handle cases where the response might be blocked or empty
+             # See response.prompt_feedback for details if blocked
+             logging.warning(f"Gemini response was empty or blocked. Feedback: {response.prompt_feedback}")
+             error_message = "Failed to generate text. The prompt might have been blocked."
+             # Check for specific block reasons if available
+             if response.prompt_feedback and response.prompt_feedback.block_reason:
+                 error_message += f" Reason: {response.prompt_feedback.block_reason.name}"
+             return jsonify({"error": error_message}), 500
 
 
-        except Exception as e:
-            logging.error(f"Error calling Gemini API or processing history: {e}", exc_info=True)
-            # Consider more specific error handling based on potential exceptions
-            # from the google.generativeai library
-            return jsonify({"error": "An error occurred while processing your request."}), 500
-    # else:
-        # If you weren't using Flask-Cors's automatic OPTIONS handling,
-        # you would return appropriate headers here for OPTIONS requests.
-        # return '', 204 # Example for manual OPTIONS handling
+    except Exception as e:
+        logging.error(f"Error calling Gemini API or processing history: {e}", exc_info=True)
+        # Consider more specific error handling based on potential exceptions
+        # from the google.generativeai library
+        return jsonify({"error": "An error occurred while processing your request."}), 500
 
 # --- Health Check Endpoint (Optional) ---
 @app.route('/health', methods=['GET'])
