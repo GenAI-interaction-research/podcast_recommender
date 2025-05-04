@@ -19,7 +19,7 @@ app = Flask(__name__)
 allowed_origins = ["https://emlyonbs.qualtrics.com", "https://emlyonbs.eu.qualtrics.com"]
 
 # Apply CORS to your app, specifying allowed origins
-CORS(app, resources={r"/generate": {"origins": allowed_origins}})
+CORS(app, origins=["https://emlyonbs.qualtrics.com", "https://emlyonbs.eu.qualtrics.com"])
 # This applies CORS specifically to the /generate route for the specified origins.
 # For simpler (but less secure) setup during development, you could use:
 # CORS(app) # Allows all origins - NOT recommended for production
@@ -86,14 +86,13 @@ def generate_text():
     Handles POST requests with conversation history to generate text via Gemini API
     and handles preflight OPTIONS requests for CORS.
     """
-    # --- Handle OPTIONS request explicitly ---
     if request.method == 'OPTIONS':
-        # Flask-Cors adds the Access-Control headers.
-        # We just need to return a successful response.
-        # 204 No Content is appropriate for successful preflight.
-        return '', 204
-    # -----------------------------------------
-
+        response = app.make_default_options_response()
+        response.headers.add('Access-Control-Allow-Origin', 'https://emlyonbs.qualtrics.com')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST')
+        return response
+    
     # --- Handle POST request ---
     elif request.method == 'POST':
         if not GEMINI_API_KEY:
