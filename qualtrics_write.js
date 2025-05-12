@@ -78,7 +78,7 @@ Qualtrics.SurveyEngine.addOnload(function() {
         responseArea.style.color = 'black';
 
         // --- Backend API Call (Sending Full History) ---
-        const backendUrl = 'https://app-paper-b89084cfd921.herokuapp.com/generate';
+        const backendUrl = '[ADD YOUR URL OF THE HOSTED APP HERE]';
 
         fetch(backendUrl, {
             method: 'POST',
