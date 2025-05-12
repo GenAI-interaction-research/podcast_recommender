@@ -16,10 +16,10 @@ app = Flask(__name__)
 # --- CORS Configuration ---
 # Define the specific origin(s) allowed to access your backend
 # Use the origin shown in the error message
-allowed_origins = ["https://emlyonbs.qualtrics.com", "https://emlyonbs.eu.qualtrics.com"]
+allowed_origins = ["https://[YOUR UNIVERSITY].qualtrics.com", "https://[YOUR UNIVERSITY].eu.qualtrics.com"]
 
 # Apply CORS to your app, specifying allowed origins
-CORS(app, origins=["https://emlyonbs.qualtrics.com", "https://emlyonbs.eu.qualtrics.com"])
+CORS(app, origins=["https://[YOUR UNIVERSITY].qualtrics.com", "https://[YOUR UNIVERSITY].eu.qualtrics.com"])
 # This applies CORS specifically to the /generate route for the specified origins.
 # For simpler (but less secure) setup during development, you could use:
 # CORS(app) # Allows all origins - NOT recommended for production
