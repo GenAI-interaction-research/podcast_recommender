@@ -155,7 +155,7 @@ Qualtrics.SurveyEngine.addOnload(function() {
         // statusArea.innerText = 'Waiting for AI response...';
 
         // Backend API Call
-        const backendUrl = 'https://app-paper-b89084cfd921.herokuapp.com/generate';
+        const backendUrl = '[ADD YOUR URL OF THE HOSTED APP HERE]';
 
         fetch(backendUrl, {
             method: 'POST',
