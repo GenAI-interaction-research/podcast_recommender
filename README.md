@@ -1,4 +1,4 @@
-Here’s the full README content, properly formatted for you to copy and paste into your editor:
+Here’s the updated README content with the note about adding the API key and configuring the CORS setup:
 
 ---
 
@@ -51,7 +51,10 @@ GEMINI_MODEL_NAME=gemini-2.5-flash-preview-04-17
 - Replace `your-api-key-here` with your Gemini API key.
 - You can adjust the model name by updating the `GEMINI_MODEL_NAME` environment variable.
 
-### 5. Run the Application
+### 5. Configure CORS Setup
+To allow secure cross-origin communication, update the `allowed_origins` list in `app.py` to include any additional origins that should have access to your API.
+
+### 6. Run the Application
 Start the Flask development server:
 ```bash
 python app.py
@@ -114,6 +117,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 
 ## Notes
 
+- **API Key**: Ensure you configure the `GEMINI_API_KEY` in the `.env` file for the application to interact with the Gemini AI model.
 - **CORS Configuration**: The app allows requests only from specific origins. Modify the `allowed_origins` list in `app.py` to include additional origins if needed.
 - **Error Handling**: Includes robust error handling for missing API keys, invalid requests, and model initialization issues.
 - **Logging**: Logs major events and errors for debugging purposes.
@@ -129,5 +133,3 @@ Contributions are welcome! Please follow these steps:
 4. Open a pull request.
 
 ---
-
-You can now copy the above content and paste it into your editor or directly into the `README.md` file. Let me know if you need further assistance!
